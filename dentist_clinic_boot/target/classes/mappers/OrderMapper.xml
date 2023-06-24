@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.clinic.mapper.OrderMapper">
+<resultMap id="PatientResultMap" type="PatientOrder">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="onum" jdbcType="VARCHAR" property="onum" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="price" jdbcType="INTEGER" property="price" />
+    <result column="count" jdbcType="INTEGER" property="count" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="room_id" jdbcType="INTEGER" property="roomId" />
+    <result column="doctor_id" jdbcType="INTEGER" property="doctorId" />
+    <result column="dentistry_id" jdbcType="INTEGER" property="dentistryId" />
+    <result column="docName" jdbcType="VARCHAR" property="doctorName" />
+    <result column="denName" jdbcType="VARCHAR" property="dentistryName" />
+    <result column="patName" jdbcType="VARCHAR" property="patientName" />
+    <result column="check_in_time" jdbcType="TIMESTAMP" property="checkInTime" />
+    <result column="check_out_time" jdbcType="TIMESTAMP" property="checkOutTime" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+</resultMap>
+<resultMap id="DrugResultMap" type="DrugOrder">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="onum" jdbcType="VARCHAR" property="onum" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="drug_id" jdbcType="INTEGER" property="drugId" />
+    <result column="room_id" jdbcType="INTEGER" property="roomId" />
+    <result column="price" jdbcType="INTEGER" property="price" />
+    <result column="doctor_id" jdbcType="INTEGER" property="doctorId" />
+    <result column="docName" jdbcType="VARCHAR" property="doctorName" />
+    <result column="patName" jdbcType="VARCHAR" property="patientName" />
+    <result column="drug_name" jdbcType="INTEGER" property="drugName" />
+    <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="describe" jdbcType="VARCHAR" property="describe"/>
+</resultMap>
+<resultMap id="SurgeryResultMap" type="SurgeryOrder">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="room_id" jdbcType="INTEGER" property="roomId" />
+    <result column="doctor_id" jdbcType="INTEGER" property="doctorId" />
+    <result column="docName" jdbcType="VARCHAR" property="doctorName" />
+    <result column="patName" jdbcType="VARCHAR" property="patientName" />
+    <result column="roomName" jdbcType="INTEGER" property="roomName" />
+    <result column="price" jdbcType="INTEGER" property="price" />
+    <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="sur_in_time" jdbcType="TIMESTAMP" property="surgeryInTime" />
+    <result column="sur_out_time" jdbcType="TIMESTAMP" property="surgeryOutTime" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="describe" jdbcType="VARCHAR" property="describe"/>
+</resultMap>
+<resultMap id="DrugMap" type="Drug">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="name" jdbcType="INTEGER" property="name" />
+    <result column="describe" jdbcType="VARCHAR" property="describe" />
+    <result column="tag" jdbcType="VARCHAR" property="tag" />
+    <result column="price" jdbcType="INTEGER" property="price" />
+</resultMap>
+    <select id="selectByUid" resultMap="PatientResultMap">
+        SELECT
+            patient_order.*,
+            user.name docName,
+            dentistry.name denName,
+            room.name roomName,
+            user.phone phone,
+            RANK() OVER (
+                PARTITION BY patient_order.doctor_id
+                ORDER BY
+                    CASE patient_order.status
+                        WHEN 0 THEN patient_order.check_in_time
+                        WHEN 1 THEN patient_order.onum
+                        WHEN 2 THEN patient_order.check_out_time
+                        WHEN 3 THEN patient_order.create_time
+                        ELSE 4
+                        END
+                ) AS count
+        FROM patient_order
+                 LEFT JOIN user ON user.id = patient_order.doctor_id
+                 LEFT JOIN dentistry ON dentistry.id = patient_order.dentistry_id
+                 LEFT JOIN room ON room.id = patient_order.room_id
+        WHERE
+            user_id = #{uid}
+        ORDER BY
+            CASE patient_order.status
+                WHEN 0 THEN 1
+                WHEN 1 THEN 2
+                WHEN 5 THEN 3
+                WHEN 2 THEN 4
+                WHEN 3 THEN 4
+                WHEN 4 THEN 5
+                ELSE 6
+                END ,
+            patient_order.check_in_time
+    </select>
+    <select id="selectSurByUid" resultMap="SurgeryResultMap">
+        SELECT
+            surgery_order.*,
+            user.name docName,
+            other_user.name patName,
+            room.name roomName,
+            user.phone phone
+        FROM surgery_order
+                 LEFT JOIN user ON user.id = surgery_order.doctor_id
+                 LEFT JOIN user other_user ON other_user.id = surgery_order.user_id
+                 LEFT JOIN room ON room.id = surgery_order.room_id
+        WHERE
+            user_id = #{uid}
+        ORDER BY
+            CASE surgery_order.status
+                WHEN 1 THEN 1
+                WHEN 0 THEN 2
+                WHEN 2 THEN 3
+                ELSE 6
+                END ,
+            surgery_order.sur_in_time
+    </select>
+    <select id="selectByDocid" resultMap="PatientResultMap">
+        SELECT patient_order.*,
+               user.name patName,
+               dentistry.name denName,
+               room.name roomName,
+               user.phone phone
+        FROM patient_order
+                 LEFT JOIN user ON user.id = patient_order.user_id
+                 LEFT JOIN dentistry ON dentistry.id = patient_order.dentistry_id
+                 LEFT JOIN room ON room.id = patient_order.room_id
+        WHERE
+            doctor_id = #{uid} and (patient_order.status = 1 or patient_order.status = 2 or patient_order.status = 5)
+        ORDER BY
+            patient_order.check_in_time
+    </select>
+    <select id="selectSurByDocid" resultMap="SurgeryResultMap">
+        SELECT
+            surgery_order.*,
+            user.name docName,
+            other_user.name patName,
+            room.name roomName,
+            user.phone phone
+        FROM surgery_order
+                 LEFT JOIN user ON user.id = surgery_order.doctor_id
+                 LEFT JOIN user other_user ON other_user.id = surgery_order.user_id
+                 LEFT JOIN room ON room.id = surgery_order.room_id
+        WHERE
+            doctor_id = #{uid}
+        ORDER BY
+            CASE surgery_order.status
+                WHEN 1 THEN 1
+                WHEN 0 THEN 2
+                WHEN 2 THEN 3
+                ELSE 6
+                END ,
+            surgery_order.sur_in_time
+    </select>
+    <select id="selectSurgeryAll" resultMap="SurgeryResultMap">
+        SELECT
+            surgery_order.*,
+            user.name docName,
+            other_user.name patName,
+            room.name roomName,
+            user.phone phone
+        FROM surgery_order
+                 LEFT JOIN user ON user.id = surgery_order.doctor_id
+                 LEFT JOIN user other_user ON other_user.id = surgery_order.user_id
+                 LEFT JOIN room ON room.id = surgery_order.room_id
+        ORDER BY
+            surgery_order.create_time
+    </select>
+    <select id="selectDrugAll" resultMap="DrugMap">
+        SELECT
+            *
+        FROM drug
+        <where>
+            <if test="name!=null and name!=''">
+                and (name like concat('%',#{name},'%')
+                or `describe` like concat('%',#{name},'%')
+                or tag like concat('%',#{name},'%'))
+            </if>
+        </where>
+    </select>
+    <select id="selectAll" resultMap="PatientResultMap">
+        SELECT patient_order.*,
+               user.name docName,
+               dentistry.name denName,
+               other_user.name patName,
+               room.name roomName
+        FROM patient_order
+                 LEFT JOIN user ON user.id = patient_order.doctor_id
+                 LEFT JOIN dentistry ON dentistry.id = patient_order.dentistry_id
+                 LEFT JOIN user other_user ON other_user.id = patient_order.user_id
+                 LEFT JOIN room ON room.id = patient_order.room_id = room.id
+        ORDER BY patient_order.create_time DESC
+    </select>
+    <update id="updateApprove">
+        update patient_order set status = 1 where onum = #{onum}
+    </update>
+    <update id="beginSurgery">
+        update surgery_order, room, user
+        set room.status = 1, surgery_order.status = 1, user.isDiagnose = 1
+        where surgery_order.id = #{id} and doctor_id = user.id and room_id = room.id
+    </update>
+    <update id="endSurgery">
+        update surgery_order, room, user
+        set room.status = 0, surgery_order.status = 2, user.isDiagnose = 0
+        where surgery_order.id = #{id} and doctor_id = user.id and room_id = room.id
+    </update>
+    <update id="updateReject">
+        update patient_order set status = 4 where onum = #{onum}
+    </update>
+    <update id="updateCancel">
+        update patient_order set status = 3 where onum = #{onum}
+    </update>
+    <update id="updatePrescript">
+        update drug_order set status = 1 where onum = #{onum}
+    </update>
+    <update id="updateConsult">
+        update room, patient_order, user
+        set room.status = 1, patient_order.status = 5, user.isDiagnose = 1
+        where patient_order.onum = #{onum} and room.id = patient_order.room_id and user.id = patient_order.doctor_id
+    </update>
+    <update id="updateComplish">
+        update room, patient_order, user
+        set room.status = 0, patient_order.status = 2, user.isDiagnose = 0
+        where patient_order.onum = #{onum} and room.id = patient_order.room_id and user.id = patient_order.doctor_id
+    </update>
+    <update id="updateDrug">
+        update drug
+        set name = #{name}, `describe` = #{describe}, tag = #{tag}, price = #{price}
+        where id = #{id}
+    </update>
+    <delete id="del">
+        delete from patient_order where onum =#{onum}
+    </delete>
+    <delete id="deleteDrugOrder">
+        delete from drug_order where onum =#{onum}
+    </delete>
+    <delete id="deleteSurgeryOrder">
+        delete from surgery_order where id =#{id}
+    </delete>
+    <delete id="deleteDrug">
+        delete from drug where id =#{id}
+    </delete>
+    <insert id="addDrugOrder" parameterType="DrugOrder">
+        insert into drug_order values (null,
+           #{onum},
+           0,
+           (select user_id from patient_order where onum = #{onum}),
+           #{drugId},
+           #{times},
+           #{times} * (select price from drug where id = #{drugId}),
+           #{describe},
+           (select doctor_id from patient_order where onum = #{onum}),
+           NOW()
+           );
+    </insert>
+    <insert id="addSurgery" parameterType="SurgeryOrder">
+        insert into surgery_order values(
+                                        null,
+                                        0,
+                                        #{surgeryInTime},
+                                        #{surgeryOutTime},
+                                        #{type},
+                                        #{roomId},
+                                        (select user_id from patient_order where patient_order.onum = #{onum}),
+                                        (select doctor_id from patient_order where patient_order.onum = #{onum}),
+                                        0,
+                                        NOW(),
+                                        #{describe}
+        )
+    </insert>
+    <insert id="addAppoint" parameterType="PatientOrder">
+        insert into patient_order values(
+                                            null,
+                                            #{onum},
+                                            0,
+                                            (select price from user where id = #{doctorId}),
+                                            #{userId},
+                                            #{doctorId},
+                                            #{dentistryId},
+                                            #{roomId},
+                                            #{checkInTime},
+                                            #{checkOutTime},
+                                            NOW()
+                                        )
+    </insert>
+    <insert id="addDrug" parameterType="Drug">
+        insert into drug values(
+                                null,
+                                #{name},
+                                #{describe},
+                                #{tag},
+                                #{price}
+                                )
+    </insert>
+    <select id="selectDrugOrderAll" resultMap="DrugResultMap">
+        SELECT
+            drug_order.*,
+            user.name patName,
+            other_user.name docName,
+            drug.name drug_name
+        FROM drug_order
+            LEFT JOIN user ON user.id = drug_order.user_id
+            LEFT JOIN user other_user ON other_user.id = drug_order.doctor_id
+            LEFT JOIN drug ON drug.id = drug_order.drug_id
+        ORDER BY create_time
+    </select>
+    <select id="selectDrugOrderByUid" resultMap="DrugResultMap">
+        select drug_order.*,
+            user.name docName,
+            drug.name drug_name
+        from drug_order
+            LEFT JOIN user ON user.id = drug_order.doctor_id
+            LEFT JOIN drug ON drug.id = drug_order.drug_id
+        where drug_order.user_id = #{uid}
+    </select>
+    <select id="Payment" parameterType="PatientOrder" resultType="integer">
+        SELECT SUM(price) AS price
+        FROM (
+                 SELECT price FROM patient_order where user_id = #{id} UNION ALL
+                 SELECT price FROM drug_order    where user_id = #{id} UNION ALL
+                 SELECT price FROM surgery_order where user_id = #{id}
+             ) AS t;
+    </select>
+</mapper>

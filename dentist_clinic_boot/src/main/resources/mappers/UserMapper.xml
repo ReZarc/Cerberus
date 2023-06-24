@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.clinic.mapper.UserMapper">
+
+    <select id="queryUser" parameterType="user" resultType="user">
+            select
+                id,
+                username,
+                password,
+                name,
+                phone,
+                age,
+                nickname,
+                gender,
+                type
+            from
+                user
+            where
+                 username = #{username}
+    </select>
+    <select id="selectByUserName"  resultType="user">
+            select
+                id,
+                username,
+                type
+            from
+                user
+            where
+                 username = #{username}
+    </select>
+    <insert id="add" parameterType="user">
+            insert into user values (null, #{username}, md5(#{password}), #{nickname}, #{age}, #{phone}, #{name}, #{gender}, 0, 0, 0, 0, 0, '')
+    </insert>
+    <select id="selectAll" parameterType="user" resultType="user">
+        SELECT
+        id,
+        username,
+        nickname,
+        age,
+        phone,
+        name,
+        gender,
+        type
+        from user
+        <where>
+            <if test="name!=null and name!=''">
+            name like concat('%',#{name},'%')
+            or username like concat('%',#{name},'%')
+            or phone like concat('%',#{name},'%')
+        </if>
+        </where>
+    </select>
+    <select id="selectDoc" parameterType="user" resultType="user">
+        SELECT
+            id,
+            username,
+            nickname,
+            age,
+            phone,
+            name,
+            gender,
+            type
+        from user
+        where type = 1
+
+    </select>
+    <select id="selectDentistry" parameterType="dentistry" resultType="dentistry">
+        SELECT
+            id, name
+        from dentistry
+    </select>
+    <select id="selectRoom" parameterType="room" resultType="room">
+        SELECT
+            id, name
+        from room where 8 > id
+    </select>
+    <select id="selectSurRoom" parameterType="room" resultType="room">
+        SELECT
+        id, name
+        from room where id > 7
+    </select>
+    <select id="checkDiagnose" parameterType="user" resultType="integer">
+        SELECT COUNT(*)
+        from user
+        where id = #{id} and type = 1 and isDiagnose = 0
+    </select>
+    <select id="checkRoomStatus" parameterType="room" resultType="integer">
+        SELECT COUNT(*)
+        from room
+        where id = (select room_id from patient_order where onum = #{onum}) and status = 0
+    </select>
+    <select id="checkIsOrder" parameterType="patientOrder" resultType="integer">
+        SELECT COUNT(*)
+        from patient_order
+        where #{id} = patient_order.user_id and (status = 1 or status = 2)
+    </select>
+    <select id="selectDocPrm" parameterType="user" resultType="user">
+        SELECT
+            id,
+            username,
+            nickname,
+            age,
+            phone,
+            name,
+            gender,
+            type
+        from user
+        <where>
+            (type = 1 or type = 2)
+            <if test="name!=null and name!=''">
+                and (name like concat('%',#{name},'%')
+                    or username like concat('%',#{name},'%')
+                    or phone like concat('%',#{name},'%'))
+            </if>
+        </where>
+    </select>
+    <update id="update" parameterType="user">
+        update
+            user
+        set
+            username = #{username},
+            nickname = #{nickname},
+            password = #{password},
+            name = #{name},
+            age =  #{age},
+            gender = #{gender},
+            phone = #{phone},
+            type = #{type}
+        where
+            id = #{id}
+    </update>
+    <delete id="delete">
+        delete from user where id =#{id}
+    </delete>
+</mapper>

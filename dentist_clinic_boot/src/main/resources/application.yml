@@ -1,0 +1,22 @@
+server:
+  port: 9000    #当前项目的端口号
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver # 8.0
+    url: jdbc:mysql://localhost:3306/clinic?serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: 123456
+
+  servlet:
+    multipart:
+      enabled: true #是否启用http上传处理
+      max-file-size: 500MB #设置单个文件最大长度
+      max-request-size: 500MB #最大请求文件的大小
+
+mybatis:
+  type-aliases-package: com.clinic.bean #设置实体类别名
+  mapper-locations: classpath:mappers/*.xml #设置mapper.xml 存放地址
+
+file:
+  uploadPath: D:\Javaweb\Dentist\upload\clinic #上传服务器的真实路径
+  staticAccessPath: /files/ #前端访问的映射地址
